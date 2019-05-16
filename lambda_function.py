@@ -11,20 +11,9 @@ import logging
 
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.handler_input import HandlerInput
-from ask_sdk_core.dispatch_components import (
-    AbstractRequestHandler, 
-    AbstractExceptionHandler, 
-    AbstractResponseInterceptor, 
-    AbstractRequestInterceptor
-    )
-from ask_sdk_core.utils import is_intent_name, is_request_type
-from ask_sdk_model import (
-    Response, 
-    IntentRequest, 
-    DialogState, 
-    SlotConfirmationStatus, 
-    Slot
-    )
+from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractExceptionHandler, AbstractResponseInterceptor, AbstractRequestInterceptor
+from ask_sdk_core.utils import is_intent_name, is_request_type, get_slot_value
+from ask_sdk_model import Response, IntentRequest, DialogState, SlotConfirmationStatus, Slot
 from ask_sdk_model.slu.entityresolution import StatusCode
 
 # logger will log different states the function is in when certain functions are triggered.
@@ -41,6 +30,7 @@ logger.setLevel(logging.INFO)
 LAUNCH_SPEECH = 'Welcome to the fortune teller! I will tell you your fortune after a few easy questions.'
 LAUNCH_REPROMPT = 'How are you feeling today? Good or bad?'
 FEELING_REPROMPT = 'Is the weather nice or bad today?'
+WEATHER_REPROMPT = 'Did you wake up early or late this morning?'
 
 # Fortune dictionary
 # maybe change keys in dictionary
@@ -87,11 +77,9 @@ class IntentRequestHandler(AbstractRequestHandler):
         if is_intent_name("FeelingIntent")(handler_input):
             return handleFeelingIntent(handler_input)
         elif is_intent_name("WeatherIntent")(handler_input):
-            #do something
-            pass
+            return handleWeatherIntent(handler_input)
         elif is_intent_name("WakeIntent")(handler_input):
-            #do something
-            pass
+            return handleWakeIntent(handler_input)
         else:
             #some kinda error
             pass
@@ -102,18 +90,34 @@ class IntentRequestHandler(AbstractRequestHandler):
 #
 #-------------------------------------------------------------------------------
 
+"""
+Handles response to how the user is feeling (either "good" or "bad")
+    - Check location in skill progress: makes sure no other answers have been recorded yet (session attributes)
+        - If other answers have been recorded, user invoked the wrong intent at the wrong time
+    - Adds current response "good" or "bad" to feeling question, then asks next question
+"""
 def handleFeelingIntent(handler_input):
     logger.info("In handleFeelingIntent") # logs current location in skill
-    handler_input.response_builder.ask(FEELING_REPROMPT) # adds attributes to response
-    return handler_input.response_builder.response # builds and returns response
+    session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
+    if not bool(session_attr): # in python, session attributes are stored in a dictionary. Dict resolves to FALSE when empty
+        handler_input.response_builder.ask(FEELING_REPROMPT) # adds attributes to response
+        return handler_input.response_builder.response # builds and returns response
+    else:
+        handler_input.response_builder.ask("hmm not what I wanted") # adds attributes to response. need to redirect to error handler
+        return handler_input.response_builder.response # builds and returns response
 
 def handleWeatherIntent(handler_input):
     logger.info("In handleWeatherIntent") # logs current location in skill
-    pass
+    handler_input.response_builder.ask(WEATHER_REPROMPT) # adds attributes to response
+    return handler_input.response_builder.response # builds and returns response
+
 
 def handleWakeIntent(handler_input):
     logger.info("In handleWakeIntent") # logs current location in skill
+    #calls conclusion function
+    #maybe returns error?
     pass
+
 
 # ------------------------------------------------------------------------------
 #
