@@ -99,7 +99,8 @@ Handles response to how the user is feeling (either "good" or "bad")
 def handleFeelingIntent(handler_input):
     logger.info("In handleFeelingIntent") # logs current location in skill
     session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
-    if not bool(session_attr): # in python, session attributes are stored in a dictionary. Dict resolves to FALSE when empty
+    if not bool(session_attr): # in python, session attributes are stored in a dictionary, resolves to FALSE when empty
+        session_attr
         handler_input.response_builder.ask(FEELING_REPROMPT) # adds attributes to response
         return handler_input.response_builder.response # builds and returns response
     else:
@@ -118,10 +119,21 @@ def handleWeatherIntent(handler_input):
 
 def handleWakeIntent(handler_input):
     logger.info("In handleWakeIntent") # logs current location in skill
-    #calls conclusion function
-    #maybe returns error?
-    pass
+    session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
+    if "weather" in session_attr and "wake" in session_attr:
+        return conclusion(handler_input)
+    else:
+        handler_input.response_builder.ask("hmm not what I wanted") # adds attributes to response. need to redirect to error handler
+        return handler_input.response_builder.response # builds and returns response
 
+# ------------------------------------------------------------------------------
+#
+# HELPER FUNCTIONS
+#
+#-------------------------------------------------------------------------------
+
+def conclusion(handler_input):
+    logger.info("In conclusion") # logs current location in skill
 
 # ------------------------------------------------------------------------------
 #
