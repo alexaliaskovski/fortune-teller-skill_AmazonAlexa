@@ -108,9 +108,13 @@ def handleFeelingIntent(handler_input):
 
 def handleWeatherIntent(handler_input):
     logger.info("In handleWeatherIntent") # logs current location in skill
-    handler_input.response_builder.ask(WEATHER_REPROMPT) # adds attributes to response
-    return handler_input.response_builder.response # builds and returns response
-
+    session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
+    if "weather" in session_attr and "wake" not in session_attr:
+        handler_input.response_builder.ask(WEATHER_REPROMPT) # adds attributes to response
+        return handler_input.response_builder.response # builds and returns response
+    else:
+        handler_input.response_builder.ask("hmm not what I wanted") # adds attributes to response. need to redirect to error handler
+        return handler_input.response_builder.response # builds and returns response
 
 def handleWakeIntent(handler_input):
     logger.info("In handleWakeIntent") # logs current location in skill
