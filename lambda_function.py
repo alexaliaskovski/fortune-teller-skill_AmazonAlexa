@@ -94,36 +94,38 @@ class IntentRequestHandler(AbstractRequestHandler):
 Handles response to how the user is feeling (either "good" or "bad")
     - Check location in skill progress: makes sure no other answers have been recorded yet (session attributes)
         - If other answers have been recorded, user invoked the wrong intent at the wrong time
-    - Adds current response "good" or "bad" to feeling question, then asks next question
+    - Adds current response "good" or "bad" to session attributes, then asks next question
 """
 def handleFeelingIntent(handler_input):
     logger.info("In handleFeelingIntent") # logs current location in skill
     session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
     if not bool(session_attr): # in python, session attributes are stored in a dictionary, resolves to FALSE when empty
-        session_attr
+        session_attr["feeling"] = get_slot_value(handler_input, "feeling")
         handler_input.response_builder.ask(FEELING_REPROMPT) # adds attributes to response
         return handler_input.response_builder.response # builds and returns response
     else:
-        handler_input.response_builder.ask("hmm not what I wanted") # adds attributes to response. need to redirect to error handler
+        handler_input.response_builder.ask("hmm not what I wanted").set_should_end_session(True) # adds attributes to response. need to redirect to error handler
         return handler_input.response_builder.response # builds and returns response
 
 def handleWeatherIntent(handler_input):
     logger.info("In handleWeatherIntent") # logs current location in skill
     session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
-    if "weather" in session_attr and "wake" not in session_attr:
+    if "feeling" in session_attr and "weather" not in session_attr and "wake" not in session_attr: # this is super gross and hardcoded
+        session_attr["weather"] = get_slot_value(handler_input, "weather")
         handler_input.response_builder.ask(WEATHER_REPROMPT) # adds attributes to response
         return handler_input.response_builder.response # builds and returns response
     else:
-        handler_input.response_builder.ask("hmm not what I wanted") # adds attributes to response. need to redirect to error handler
+        handler_input.response_builder.ask("hmm not what I wanted").set_should_end_session(True) # adds attributes to response. need to redirect to error handler
         return handler_input.response_builder.response # builds and returns response
 
 def handleWakeIntent(handler_input):
     logger.info("In handleWakeIntent") # logs current location in skill
     session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
-    if "weather" in session_attr and "wake" in session_attr:
+    if "feeling" in session_attr and "weather" in session_attr and "wake" not in session_attr:
+        session_attr["wake"] = get_slot_value(handler_input, "wake")
         return conclusion(handler_input)
     else:
-        handler_input.response_builder.ask("hmm not what I wanted") # adds attributes to response. need to redirect to error handler
+        handler_input.response_builder.ask("hmm not what I wanted").set_should_end_session(True) # adds attributes to response. need to redirect to error handler
         return handler_input.response_builder.response # builds and returns response
 
 # ------------------------------------------------------------------------------
@@ -134,6 +136,10 @@ def handleWakeIntent(handler_input):
 
 def conclusion(handler_input):
     logger.info("In conclusion") # logs current location in skill
+    session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
+    key = session_attr["feeling"] + "-" + session_attr["weather"] + "-" + session_attr["wake"]
+    handler_input.response_builder.speak("Your fortune is: " + FORTUNE[key]) # adds attributes to response. need to redirect to error handler
+    return handler_input.response_builder.response # builds and returns response
 
 # ------------------------------------------------------------------------------
 #
