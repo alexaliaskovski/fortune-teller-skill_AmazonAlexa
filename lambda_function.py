@@ -107,6 +107,12 @@ def handleFeelingIntent(handler_input):
         handler_input.response_builder.ask("hmm not what I wanted").set_should_end_session(True) # adds attributes to response. need to redirect to error handler
         return handler_input.response_builder.response # builds and returns response
 
+"""
+Handles response to the weather (either "nice" or "bad")
+    - Check location in skill progress: makes sure only feeling answers have been recorded (session attributes)
+        - If other answers have been recorded, user invoked the wrong intent at the wrong time
+    - Adds current response "nice" or "bad" to session attributes, then asks next question
+"""
 def handleWeatherIntent(handler_input):
     logger.info("In handleWeatherIntent") # logs current location in skill
     session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
@@ -118,6 +124,12 @@ def handleWeatherIntent(handler_input):
         handler_input.response_builder.ask("hmm not what I wanted").set_should_end_session(True) # adds attributes to response. need to redirect to error handler
         return handler_input.response_builder.response # builds and returns response
 
+"""
+Handles response to when the user woke up (either "early" or "late")
+    - Check location in skill progress: makes sure feeling and weather have been recorded already (session attributes)
+        - If other answers have been recorded, user invoked the wrong intent at the wrong time
+    - Adds current response "early" or "late" to session attributes, then asks next question
+"""
 def handleWakeIntent(handler_input):
     logger.info("In handleWakeIntent") # logs current location in skill
     session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
@@ -134,13 +146,18 @@ def handleWakeIntent(handler_input):
 #
 #-------------------------------------------------------------------------------
 
+"""
+Handles conclusion, sends fortune to the user
+    - Uses session attributes to build key for FORTUNE dictionary
+    - Grabs fortune and sends to user. Terminated session.
+"""
 def conclusion(handler_input):
     logger.info("In conclusion") # logs current location in skill
     session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
     key = session_attr["feeling"] + "-" + session_attr["weather"] + "-" + session_attr["wake"]
-    handler_input.response_builder.speak("Your fortune is: " + FORTUNE[key]) # adds attributes to response. need to redirect to error handler
+    handler_input.response_builder.speak("Your fortune is: " + FORTUNE[key]).set_should_end_session(True) # adds attributes to response. need to redirect to error handler
     return handler_input.response_builder.response # builds and returns response
-
+    # could change to reprompt the user to start again
 # ------------------------------------------------------------------------------
 #
 # ADDING HANDLERS TO SKILL
