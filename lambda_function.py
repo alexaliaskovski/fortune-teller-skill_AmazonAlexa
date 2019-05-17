@@ -45,6 +45,14 @@ FORTUNE = {
     "bad-bad-late": "Change can hurt, but it leads a path to something better."
 }
 
+# Help dictionary, to find what kind of help to give based on most recent question.
+# gross and hard-coded...
+HELP_DICT = {
+    LAUNCH_REPROMPT : "Respond good if you're feeling good today, or bad if you're feeling bad today. If you're not sure, pick one at random.",
+    FEELING_REPROMPT : "Respond nice if you like the weather outside today, or bad if you don't like the weather outside today. If you're not sure, pick one at random.",
+    WEATHER_REPROMPT : "Respond early if you woke up earlier than usual or on time, or late if you woke up later than usual or later than you should have. If you're not sure, pick one at random."
+}
+
 # ------------------------------------------------------------------------------
 #
 # HANDLER CLASSES
@@ -61,6 +69,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
         return is_request_type("LaunchRequest")(handler_input)
     def handle(self, handler_input):
         logger.info("In LaunchRequestHandler") # logs current location in skill
+        saveLastSpoken(handler_input, LAUNCH_REPROMPT)
         handler_input.response_builder.speak(LAUNCH_SPEECH).ask(LAUNCH_REPROMPT) # adds attributes to response
         return handler_input.response_builder.response # builds and returns response
 
@@ -83,7 +92,21 @@ class IntentRequestHandler(AbstractRequestHandler):
         else:
             #some kinda error
             pass
-        
+
+"""
+Handles HELP requests.
+    function can_handle: will return TRUE if request type is 'HelpRequest', otherwise FALSE.
+    function handle: sends help to user based on where they are in questions. Reprompts most recent question.
+"""
+class HelpRequestHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_request_type("HelpRequest")(handler_input)
+    def handle(self, handler_input):
+        logger.info("In HelpRequestHandler") # logs current location in skill
+        session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
+        handler_input.response_builder.speak(HELP_DICT[session_attr["last_spoken"]]).reprompt(session_attr["last_spoken"])
+        return handler_input.response_builder.response
+
 # ------------------------------------------------------------------------------
 #
 # INTENT HANDLER FUNCTIONS
@@ -102,6 +125,7 @@ def handleFeelingIntent(handler_input):
     if not bool(session_attr): # in python, session attributes are stored in a dictionary, resolves to FALSE when empty
         session_attr["feeling"] = get_slot_value(handler_input, "feeling")
         handler_input.response_builder.ask(FEELING_REPROMPT) # adds attributes to response
+        saveLastSpoken(handler_input, FEELING_REPROMPT)
         return handler_input.response_builder.response # builds and returns response
     else:
         handler_input.response_builder.ask("hmm not what I wanted").set_should_end_session(True) # adds attributes to response. need to redirect to error handler
@@ -119,6 +143,7 @@ def handleWeatherIntent(handler_input):
     if "feeling" in session_attr and "weather" not in session_attr and "wake" not in session_attr: # this is super gross and hardcoded
         session_attr["weather"] = get_slot_value(handler_input, "weather")
         handler_input.response_builder.ask(WEATHER_REPROMPT) # adds attributes to response
+        saveLastSpoken(handler_input, WEATHER_REPROMPT)
         return handler_input.response_builder.response # builds and returns response
     else:
         handler_input.response_builder.ask("hmm not what I wanted").set_should_end_session(True) # adds attributes to response. need to redirect to error handler
@@ -158,6 +183,11 @@ def conclusion(handler_input):
     handler_input.response_builder.speak("Your fortune is: " + FORTUNE[key]).set_should_end_session(True) # adds attributes to response. need to redirect to error handler
     return handler_input.response_builder.response # builds and returns response
     # could change to reprompt the user to start again
+
+def saveLastSpoken(handler_input, speach):
+    session_attr = handler_input.attributes_manager.session_attributes # grabs session attributes
+    session_attr["last_spoken"] = speach
+
 # ------------------------------------------------------------------------------
 #
 # ADDING HANDLERS TO SKILL
@@ -169,7 +199,7 @@ skill_builder = SkillBuilder()
 # Add all request handlers to the skill.
 skill_builder.add_request_handler(LaunchRequestHandler())
 skill_builder.add_request_handler(IntentRequestHandler())
-#sb.add_request_handler(HelpIntentHandler())
+skill_builder.add_request_handler(HelpRequestHandler())
 #sb.add_request_handler(FallbackIntentHandler())
 #sb.add_request_handler(ExitIntentHandler())
 #sb.add_request_handler(SessionEndedRequestHandler())
