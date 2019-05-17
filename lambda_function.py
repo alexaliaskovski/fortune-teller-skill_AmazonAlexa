@@ -152,8 +152,6 @@ skill_builder = SkillBuilder()
 # Add all request handlers to the skill.
 skill_builder.add_request_handler(LaunchRequestHandler())
 skill_builder.add_request_handler(IntentRequestHandler())
-#sb.add_request_handler(InProgressPetMatchIntent()) #change 
-#sb.add_request_handler(CompletedPetMatchIntent()) #change
 #sb.add_request_handler(HelpIntentHandler())
 #sb.add_request_handler(FallbackIntentHandler())
 #sb.add_request_handler(ExitIntentHandler())
